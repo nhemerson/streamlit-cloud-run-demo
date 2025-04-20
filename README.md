@@ -100,3 +100,16 @@ gcloud run deploy streamlit-cohort-analysis \
 - **Authentication errors**: Run `gcloud auth login` and `gcloud auth configure-docker`
 - **Permission errors**: Make sure you have the necessary IAM roles (Cloud Run Admin, Storage Admin)
 - **Container Registry access**: Enable the Container Registry API in your GCP project
+
+## Theme Configuration
+
+This app uses a light theme configuration. To apply the theme:
+
+1. Copy the contents of `.streamlit/theme.toml` into `.streamlit/config.toml`
+2. If the `.streamlit` directory doesn't exist, create it first:
+   ```bash
+   mkdir -p .streamlit
+   cp .streamlit/theme.toml .streamlit/config.toml
+   ```
+
+The theme configuration isn't automatically applied because `.streamlit/config.toml` is typically ignored in Git repositories.
