@@ -73,6 +73,3 @@ Thumbs.db
 # Logs
 logs/
 *.log 
-
-# local data
-data/
