@@ -213,7 +213,7 @@ def create_time_df(data, value_column, groupby_column=None):
             result = data.groupby([pd.Grouper(key='created_date', freq='W'), groupby_column])[value_column].sum().reset_index()
             result['period'] = result['created_date'].dt.strftime('%Y-%U')
         elif timeframe == "Monthly":
-            result = data.groupby([pd.Grouper(key='created_date', freq='ME'), groupby_column])[value_column].sum().reset_index()
+            result = data.groupby([pd.Grouper(key='created_date', freq='M'), groupby_column])[value_column].sum().reset_index()
             result['period'] = result['created_date'].dt.strftime('%Y-%m')
         elif timeframe == "Quarterly":
             result = data.groupby([pd.Grouper(key='created_date', freq='Q'), groupby_column])[value_column].sum().reset_index()
@@ -230,7 +230,7 @@ def create_time_df(data, value_column, groupby_column=None):
             result = data.set_index('created_date')[value_column].resample('W').sum().reset_index()
             result['period'] = result['created_date'].dt.strftime('%Y-%U')
         elif timeframe == "Monthly":
-            result = data.set_index('created_date')[value_column].resample('ME').sum().reset_index()
+            result = data.set_index('created_date')[value_column].resample('M').sum().reset_index()
             result['period'] = result['created_date'].dt.strftime('%Y-%m')
         elif timeframe == "Quarterly":
             result = data.set_index('created_date')[value_column].resample('Q').sum().reset_index()
