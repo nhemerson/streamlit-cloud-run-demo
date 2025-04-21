@@ -2,43 +2,16 @@ import streamlit as st
 import os
 import shutil
 
-# Check if theme.toml exists and config.toml doesn't exist - copy theme to config
-streamlit_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.streamlit')
-theme_path = os.path.join(streamlit_dir, 'theme.toml')
-config_path = os.path.join(streamlit_dir, 'config.toml')
-
-if os.path.exists(theme_path) and not os.path.exists(config_path):
-    # Create the .streamlit directory if it doesn't exist
-    os.makedirs(streamlit_dir, exist_ok=True)
-    # Copy theme.toml to config.toml
-    shutil.copyfile(theme_path, config_path)
-    print("Copied theme settings from theme.toml to config.toml")
-
 # Page config must be first Streamlit command
 st.set_page_config(
     page_title="Streaming Cohort Analysis",
     layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items=None
+    initial_sidebar_state="collapsed"
 )
 
-# Add custom CSS to enforce light theme and disable theme switcher
+# Add custom CSS for styling (without theme forcing)
 st.markdown("""
 <style>
-    /* Force light theme */
-    [data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-    }
-    
-    .stApp {
-        background-color: #FFFFFF;
-    }
-    
-    /* Hide dark mode toggle */
-    [data-testid="stToolbar"] [data-testid="baseButton-headerNoPadding"] {
-        display: none;
-    }
-
     /* Additional styling for nicer appearance */
     .plot-container {
         border-radius: 5px;
