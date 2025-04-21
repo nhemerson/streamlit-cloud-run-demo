@@ -1,6 +1,9 @@
 import streamlit as st
-import os
-import shutil
+import pandas as pd
+import plotly.express as px
+from datetime import datetime, date
+from functions.ingestion import load_data
+from functions.utilities import create_time_df
 
 # Page config must be first Streamlit command
 st.set_page_config(
@@ -26,37 +29,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-import pandas as pd
-import plotly.express as px
-import json
-from datetime import datetime, date
-
-# Load data
-@st.cache_data
-def load_data():
-    with open('data/streaming_data.json', 'r') as f:
-        data = json.load(f)
-    df = pd.DataFrame(data)
-    
-    # Convert dates to datetime
-    df['created_date'] = pd.to_datetime(df['created_date'])
-    
-    # Calculate percentage watched
-    df['percentage_watched'] = (df['user_watch_duration_seconds'] / df['show_duration_seconds'] * 100).round(0)
-    
-    # Create percentage categories
-    df['percentage_category'] = pd.cut(
-        df['percentage_watched'],
-        bins=[0, 25, 50, 75, 100],
-        labels=['0-25%', '26-50%', '51-75%', '76-100%'],
-        include_lowest=True
-    )
-    
-    # Convert durations to minutes for easier visualization
-    df['watch_minutes'] = df['user_watch_duration_seconds'] / 60
-    
-    return df
 
 # Load the data
 df = load_data()
@@ -128,9 +100,7 @@ with st.container():
             ratings = ["All Ratings"] + sorted(df['show_rating'].unique().tolist())
             rating = st.selectbox("Rating", options=ratings, label_visibility="collapsed")
         
-        with col2:
-            st.write("")
-            st.write("")
+        # fourth row - Apply button
             apply_btn = st.button("Apply Filters", type="primary", use_container_width=False)
         
         st.markdown('</div>', unsafe_allow_html=True)
@@ -173,70 +143,7 @@ if apply_btn:
     # Store the filtered data in session state
     st.session_state.filtered_data = filtered_data
 
-# Function to create time period based on selected timeframe
-def create_time_df(data, value_column, groupby_column=None):
-    # Resample data based on the selected timeframe
-    if groupby_column:
-        # First group by the categorical column and time
-        if timeframe == "Daily":
-            # For daily data, we need to group by date and category
-            result = data.groupby([pd.Grouper(key='created_date', freq='D'), groupby_column])[value_column].sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y-%m-%d')
-        elif timeframe == "Weekly":
-            result = data.groupby([pd.Grouper(key='created_date', freq='W'), groupby_column])[value_column].sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y-%U')
-        elif timeframe == "Monthly":
-            result = data.groupby([pd.Grouper(key='created_date', freq='M'), groupby_column])[value_column].sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y-%m')
-        elif timeframe == "Quarterly":
-            result = data.groupby([pd.Grouper(key='created_date', freq='Q'), groupby_column])[value_column].sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y-Q%q')
-        else:  # Yearly
-            result = data.groupby([pd.Grouper(key='created_date', freq='Y'), groupby_column])[value_column].sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y')
-    else:
-        # Simple time-based aggregation
-        if timeframe == "Daily":
-            result = data.set_index('created_date')[value_column].resample('D').sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y-%m-%d')
-        elif timeframe == "Weekly":
-            result = data.set_index('created_date')[value_column].resample('W').sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y-%U')
-        elif timeframe == "Monthly":
-            result = data.set_index('created_date')[value_column].resample('M').sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y-%m')
-        elif timeframe == "Quarterly":
-            result = data.set_index('created_date')[value_column].resample('Q').sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y-Q%q')
-        else:  # Yearly
-            result = data.set_index('created_date')[value_column].resample('Y').sum().reset_index()
-            result['period'] = result['created_date'].dt.strftime('%Y')
-            
-    return result
 
-# Define common plot styling for consistent look
-def apply_light_theme_to_fig(fig):
-    """Apply consistent light theme styling to Plotly figures"""
-    fig.update_layout(
-        plot_bgcolor="#FFFFFF",
-        paper_bgcolor="#FFFFFF",
-        font_color="#262730",
-        margin=dict(l=20, r=20, t=30, b=20),
-        legend=dict(
-            bgcolor="#FFFFFF",
-            bordercolor="#E5E5E5",
-            borderwidth=1
-        ),
-        xaxis=dict(
-            gridcolor="#F0F0F0",
-            zerolinecolor="#E5E5E5",
-        ),
-        yaxis=dict(
-            gridcolor="#F0F0F0",
-            zerolinecolor="#E5E5E5",
-        ),
-    )
-    return fig
 
 # Show visualization if filters are applied
 if st.session_state.filtered:
@@ -260,7 +167,7 @@ if st.session_state.filtered:
         with tab1:
             st.subheader("Total Watch Duration Over Time")
             
-            time_df = create_time_df(filtered_data, 'watch_minutes')
+            time_df = create_time_df(filtered_data, timeframe, 'watch_minutes')
             
             # Create and display the line chart
             if not time_df.empty:
@@ -274,9 +181,6 @@ if st.session_state.filtered:
                     labels={"watch_minutes": "Total Watch Duration (minutes)", "period": "Period"}
                 )
                 
-                # Apply light theme styling
-                apply_light_theme_to_fig(fig)
-                
                 # Use custom div for styling
                 st.markdown('<div class="plot-container">', unsafe_allow_html=True)
                 st.plotly_chart(fig, use_container_width=True)
@@ -288,7 +192,7 @@ if st.session_state.filtered:
         with tab2:
             st.subheader("Watch Duration by Timezone Over Time")
             
-            timezone_df = create_time_df(filtered_data, 'watch_minutes', 'timezone')
+            timezone_df = create_time_df(filtered_data, timeframe, 'watch_minutes', 'timezone')
             
             if not timezone_df.empty:
                 # Create line chart with multiple lines for each timezone
@@ -304,8 +208,6 @@ if st.session_state.filtered:
                             "timezone": "Timezone"}
                 )
                 
-                # Apply light theme styling
-                apply_light_theme_to_fig(fig)
                 fig.update_layout(legend_title="Timezone")
                 
                 # Use custom div for styling
@@ -319,7 +221,7 @@ if st.session_state.filtered:
         with tab3:
             st.subheader("Watch Duration by Show Type Over Time")
             
-            type_df = create_time_df(filtered_data, 'watch_minutes', 'show_type')
+            type_df = create_time_df(filtered_data, timeframe, 'watch_minutes', 'show_type')
             
             if not type_df.empty:
                 # Create line chart with multiple lines for each show type
@@ -334,9 +236,7 @@ if st.session_state.filtered:
                             "period": "Period", 
                             "show_type": "Show Type"}
                 )
-                
-                # Apply light theme styling
-                apply_light_theme_to_fig(fig)
+
                 fig.update_layout(legend_title="Show Type")
                 
                 # Use custom div for styling
@@ -356,8 +256,7 @@ if st.session_state.filtered:
                             "show_type": "Show Type"}
                 )
                 
-                # Apply light theme styling
-                apply_light_theme_to_fig(fig2)
+            
                 fig2.update_layout(legend_title="Show Type")
                 
                 # Use custom div for styling
@@ -375,7 +274,7 @@ if st.session_state.filtered:
             top_shows = filtered_data.groupby('show_name')['watch_minutes'].sum().nlargest(5).index.tolist()
             top_shows_data = filtered_data[filtered_data['show_name'].isin(top_shows)]
             
-            show_df = create_time_df(top_shows_data, 'watch_minutes', 'show_name')
+            show_df = create_time_df(top_shows_data, timeframe, 'watch_minutes', 'show_name')
             
             if not show_df.empty:
                 # Create line chart with multiple lines for each show
@@ -391,8 +290,7 @@ if st.session_state.filtered:
                             "show_name": "Show Name"}
                 )
                 
-                # Apply light theme styling
-                apply_light_theme_to_fig(fig)
+
                 fig.update_layout(legend_title="Show Name")
                 
                 # Use custom div for styling
@@ -412,8 +310,6 @@ if st.session_state.filtered:
                             "show_name": "Show Name"}
                 )
                 
-                # Apply light theme styling
-                apply_light_theme_to_fig(fig2)
                 fig2.update_layout(legend_title="Show Name")
                 
                 # Use custom div for styling
