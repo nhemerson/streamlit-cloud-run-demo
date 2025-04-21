@@ -26,6 +26,20 @@ This repository contains a Streamlit application for streaming cohort analysis, 
    streamlit run Home.py
    ```
 
+## Using Docker for Development
+
+You can also run the application locally using Docker:
+
+1. Build the Docker image:
+   ```bash
+   docker build -t streamlit-app .
+   ```
+
+2. Run in development mode:
+   ```bash
+   docker run -p 8501:8501 -e DEV_MODE=true streamlit-app
+   ```
+
 ## Deployment Steps
 
 ### 1. Build Docker Image
