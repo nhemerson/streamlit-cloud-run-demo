@@ -9,7 +9,7 @@ from functions.utilities import create_time_df
 st.set_page_config(
     page_title="Streaming Cohort Analysis",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # Add custom CSS for styling (without theme forcing)
@@ -29,6 +29,40 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Sidebar content
+with st.sidebar:
+    st.title("Navigation")
+    st.markdown("---")
+    
+    # Navigation menu
+    st.markdown("### Pages")
+    st.markdown("- 🏠 **Home**")
+    st.markdown("---")
+    
+    # About section
+    st.markdown("### About")
+    st.markdown("""
+    This application provides streaming cohort analysis with the following features:
+    - Watch duration analysis
+    - Timezone-based insights
+    - Show type analysis
+    - Top shows tracking
+    """)
+    
+    # Help section
+    st.markdown("### Help")
+    st.markdown("""
+    Use the filters above to:
+    1. Select date range
+    2. Choose timeframe
+    3. Filter by state/timezone
+    4. Filter by show details
+    """)
+    
+    # Version info
+    st.markdown("---")
+    st.markdown("Version 1.0.0")
 
 # Load the data
 df = load_data()
