@@ -32,16 +32,10 @@ st.markdown("""
 
 # Sidebar content
 with st.sidebar:
-    st.title("Navigation")
-    st.markdown("---")
-    
-    # Navigation menu
-    st.markdown("### Pages")
-    st.markdown("- 🏠 **Home**")
+    st.title("About")
     st.markdown("---")
     
     # About section
-    st.markdown("### About")
     st.markdown("""
     This application provides streaming cohort analysis with the following features:
     - Watch duration analysis
